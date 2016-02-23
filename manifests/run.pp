@@ -91,6 +91,8 @@ define docker::run(
   $restart = undef,
   $before_start = false,
   $before_stop = false,
+  $stop_before_kill = false,
+  $stop_timeout = false,
   $remove_container_on_start = true,
   $remove_container_on_stop = true,
   $remove_volume_on_start = false,
@@ -129,6 +131,8 @@ define docker::run(
   validate_bool($remove_volume_on_start)
   validate_bool($remove_volume_on_stop)
   validate_bool($use_name)
+  validate_bool($stop_before_kill)
+  validate_re($stop_timeout, '^false|[0-9]+$')
 
   if ($remove_volume_on_start and !$remove_container_on_start) {
     fail("In order to remove the volume on start for ${title} you need to also remove the container")
