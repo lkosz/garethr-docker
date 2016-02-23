@@ -48,6 +48,14 @@
 # command. Useful for adding additional new or experimental options that the
 # module does not yet support.
 #
+# [*stop_before_kill*]
+# (optional) - boolean
+# Performs docker stop before docker kill in systemd service for docker container
+#
+# [*stop_timeout*]
+# (optional) - string
+# Add optional parameter -t <timeout> to docker stop
+#
 define docker::run(
   $image,
   $ensure = 'present',
