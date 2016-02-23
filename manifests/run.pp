@@ -48,6 +48,14 @@
 # command. Useful for adding additional new or experimental options that the
 # module does not yet support.
 #
+# [*stop_before_kill*]
+# (optional) - boolean
+# Performs docker stop before docker kill in systemd service for docker container
+#
+# [*stop_timeout*]
+# (optional) - string
+# Add optional parameter -t <timeout> to docker stop
+#
 define docker::run(
   $image,
   $ensure = 'present',
@@ -91,6 +99,8 @@ define docker::run(
   $restart = undef,
   $before_start = false,
   $before_stop = false,
+  $stop_before_kill = false,
+  $stop_timeout = false,
   $remove_container_on_start = true,
   $remove_container_on_stop = true,
   $remove_volume_on_start = false,
@@ -129,6 +139,11 @@ define docker::run(
   validate_bool($remove_volume_on_start)
   validate_bool($remove_volume_on_stop)
   validate_bool($use_name)
+  validate_bool($stop_before_kill)
+
+  if $stop_timeout != false {
+    validate_re($stop_timeout, '^[0-9]+$')
+  }
 
   if ($remove_volume_on_start and !$remove_container_on_start) {
     fail("In order to remove the volume on start for ${title} you need to also remove the container")
