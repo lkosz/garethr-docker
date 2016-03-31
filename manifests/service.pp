@@ -53,6 +53,7 @@ class docker::service (
   $log_opt                           = $docker::log_opt,
   $selinux_enabled                   = $docker::selinux_enabled,
   $socket_group                      = $docker::socket_group,
+  $labels                            = $docker::labels,
   $dns                               = $docker::dns,
   $dns_search                        = $docker::dns_search,
   $service_state                     = $docker::service_state,
@@ -101,6 +102,11 @@ class docker::service (
   $service_overrides_template        = $docker::service_overrides_template,
   $service_hasstatus                 = $docker::service_hasstatus,
   $service_hasrestart                = $docker::service_hasrestart,
+  $tls_enable                        = $docker::tls_enable,
+  $tls_verify                        = $docker::tls_verify,
+  $tls_cacert                        = $docker::tls_cacert,
+  $tls_cert                          = $docker::tls_cert,
+  $tls_key                           = $docker::tls_key,
 ) {
 
   unless $::osfamily =~ /(Debian|RedHat|Archlinux|Gentoo)/ {
@@ -122,9 +128,8 @@ class docker::service (
   }
 
   $_manage_service = $manage_service ? {
-    false   => undef,
-    true    => 'Service[docker]',
-    default => undef,
+    true    => Service['docker'],
+    default => [],
   }
 
   if $::osfamily == 'RedHat' {
@@ -152,7 +157,7 @@ class docker::service (
         }
         exec { 'docker-systemd-reload-before-service':
           path        => ['/bin/', '/sbin/', '/usr/bin/', '/usr/sbin/'],
-          command     => 'systemctl daemon-reload',
+          command     => 'systemctl daemon-reload > /dev/null',
           before      => $_manage_service,
           refreshonly => true,
         }

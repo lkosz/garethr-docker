@@ -19,7 +19,6 @@ describe 'docker', :type => :class do
         storage_config_file = '/etc/default/docker'
 
         context 'It should include default prerequired_packages' do
-          it { should contain_package('apt-transport-https').with_ensure('present') }
           it { should contain_package('cgroupfs-mount').with_ensure('present') }
         end
       end
@@ -41,7 +40,6 @@ describe 'docker', :type => :class do
         it { should contain_file('/etc/init.d/docker').with_ensure('link').with_target('/lib/init/upstart-job') }
 
         context 'It should include default prerequired_packages' do
-          it { should contain_package('apt-transport-https').with_ensure('present') }
           it { should contain_package('cgroup-lite').with_ensure('present') }
           it { should contain_package('apparmor').with_ensure('present') }
         end
@@ -50,9 +48,8 @@ describe 'docker', :type => :class do
       if osfamily == 'Ubuntu' or osfamily == 'Debian'
 
         it { should contain_class('apt') }
-        it { should contain_package('apt-transport-https').that_comes_before('Apt::Source[docker]') }
         it { should contain_package('docker').with_name('docker-engine').with_ensure('present') }
-        it { should contain_apt__source('docker').with_location('https://apt.dockerproject.org/repo') }
+        it { should contain_apt__source('docker').with_location('http://apt.dockerproject.org/repo') }
         it { should contain_package('docker').with_install_options(nil) }
 
         context 'with a custom version' do
@@ -106,6 +103,20 @@ describe 'docker', :type => :class do
           it do
             should contain_file('/etc/default/docker').with_content(
               /tcp:\/\/127.0.0.1:2375/
+            )
+          end
+        end
+        context 'with tls param' do
+          let(:params) {{
+              'tcp_bind' => 'tcp://127.0.0.1:2375',
+              'tls_enable' => true,
+          }}
+          it do
+            should contain_file('/etc/default/docker').with_content(
+              /tcp:\/\/127.0.0.1:2375/
+            )
+            should contain_file('/etc/default/docker').with_content(
+              /--tlsverify --tlscacert=\/etc\/docker\/tls\/ca.pem --tlscert=\/etc\/docker\/tls\/cert.pem --tlskey=\/etc\/docker\/tls\/key.pem/
             )
           end
         end
@@ -192,6 +203,20 @@ describe 'docker', :type => :class do
           it do
             should contain_file('/etc/sysconfig/docker').with_content(
               /tcp:\/\/127.0.0.1:2375/)
+          end
+        end
+        context 'with tls param' do
+          let(:params) {{
+              'tcp_bind' => 'tcp://127.0.0.1:2375',
+              'tls_enable' => true,
+          }}
+          it do
+            should contain_file('/etc/sysconfig/docker').with_content(
+              /tcp:\/\/127.0.0.1:2375/
+            )
+            should contain_file('/etc/sysconfig/docker').with_content(
+              /--tlsverify --tlscacert=\/etc\/docker\/tls\/ca.pem --tlscert=\/etc\/docker\/tls\/cert.pem --tlskey=\/etc\/docker\/tls\/key.pem/
+            )
           end
         end
 
@@ -473,6 +498,12 @@ describe 'docker', :type => :class do
       context 'with socket group set' do
         let(:params) { { 'socket_group' => 'notdocker' }}
         it { should contain_file(service_config_file).with_content(/-G notdocker/) }
+      end
+
+      context 'with labels set' do
+        let(:params) { { 'labels' => ['storage=ssd','stage=production'] }}
+        it { should contain_file(service_config_file).with_content(/--label storage=ssd/) }
+        it { should contain_file(service_config_file).with_content(/--label stage=production/) }
       end
 
       context 'with service_state set to stopped' do
